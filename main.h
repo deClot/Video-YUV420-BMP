@@ -25,5 +25,10 @@ typedef struct {
     unsigned int             biClrImportant; // 4 bytes
 } BMPInfoHeader;
 
-
+typedef struct {
+    unsigned char  rgbBlue;
+    unsigned char  rgbGreen;
+    unsigned char  rgbRed;
+    unsigned char  rgbReserved;
+} RGBQUAD;
 #endif // MAIN_H_INCLUDEDs

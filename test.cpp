@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#include <string>
 #include <fstream>
 
 
@@ -10,38 +9,36 @@
 using namespace std;
 
 template <typename Type>
-void read(std::ifstream &fp, Type &result, std::size_t size) {
-  fp.read(reinterpret_cast<char*>(&result), size);
+void read(ifstream &file, Type &result, size_t size) {
+  file.read(reinterpret_cast<char*>(&result), size);
 }
 
-//void open_bmp (string name_bmp_file) {
-  // file *fbmp = fopen( name_bmp_file, "rb" );
-  // if( !fbmp ) return NULL;
+unsigned char bitextract(const unsigned int byte, const unsigned int mask) {
+    int
+        maskBufer = mask,
+        maskPadding = 0;
+ 
+    while (!(maskBufer & 1)) {
+        maskBufer >>= 1;
+        //       cout << "!!!" << endl;
+        maskPadding++;
+    }
+ 
+    return (byte & mask) >> maskPadding;
+}
 
-//  string str;
-  
-
-//  }
-//}
 int main(int argc, char **argv){
 
-  ifstream file_bmp( "LAND.BMP",ios_base::in |ios_base::binary);
+  ifstream file_bmp( "qq.bmp",ios_base::in |ios_base::binary);
   if (!file_bmp) {
     cout << "Error opening file" << endl;
     return 0;
   }
 
-  BMPFileHeader file_header;    
+  BMPFileHeader file_header;
   BMPInfoHeader info_header;
   read(file_bmp, file_header, sizeof(file_header)-2);
   read(file_bmp, info_header, sizeof(info_header));
-  
-  /*  read(file_bmp, bfh.bfType, sizeof(bfh.bfType));
-  read(file_bmp, bfh.bfSize, sizeof(bfh.bfSize));
-  read(file_bmp, bfh.bfReserved1, sizeof(bfh.bfReserved1));
-  read(file_bmp, bfh.bfReserved2, sizeof(bfh.bfReserved2));
-  read(file_bmp, bfh.bfOffBits, sizeof(bfh.bfOffBits));
-  read(file_bmp, bih.biSize, sizeof(bih.biSize)); */
 
   if (file_header.bfType != 0x4D42) {   // check format file - BM
       cout << "Error: file is not BMP file. "<< std::endl;
@@ -53,5 +50,47 @@ int main(int argc, char **argv){
       return 0;
   }
 
+  RGBQUAD **rgb = new RGBQUAD*[info_header.biHeight];
+  for (unsigned int i = 0; i < info_header.biHeight; i++) {
+      rgb[i] = new RGBQUAD[info_header.biWidth];
+  }
+
+  int padding = ((info_header.biWidth * (info_header.biBitCount / 8)) % 4) & 3;
+
+  unsigned int bufer;
+
+  int colorsCount = info_header.biBitCount >> 3;    // from bit to byte
+  int bitsOnColor = info_header.biBitCount / colorsCount;
+  int maskValue   = (1 << bitsOnColor) - 1;
+
+  int redMask   = maskValue << (bitsOnColor * 2);
+  int greenMask = maskValue << bitsOnColor;
+  int blueMask  = maskValue;
+
+  //  cout << redMask << endl;
+
+  for (unsigned int i = 0; i < info_header.biHeight; i++) {
+      for (unsigned int j = 0; j < info_header.biWidth; j++) {
+          read(file_bmp, bufer, info_header.biBitCount / 8);
+ 
+          rgb[i][j].rgbRed = bitextract(bufer, redMask);
+          rgb[i][j].rgbGreen = bitextract(bufer, greenMask);
+          rgb[i][j].rgbBlue = bitextract(bufer, blueMask);
+      }
+      file_bmp.seekg(padding, ios_base::cur);    // from current position move to + padding
+  }
+ 
+  /*  for (unsigned int i = 0; i < info_header.biHeight; i++) {
+      for (unsigned int j = 0; j < info_header.biWidth; j++) {
+          cout << hex
+               << +rgb[i][j].rgbRed << " "
+               << +rgb[i][j].rgbGreen << " "
+               << +rgb[i][j].rgbBlue << " "
+               << endl;
+        }
+      cout << endl;
+    }
+  */
+    return 1; 
 }
 
