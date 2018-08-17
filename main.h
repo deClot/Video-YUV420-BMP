@@ -22,7 +22,7 @@ typedef struct {
     unsigned int             biXPelsPerMeter;// 4 bytes
     unsigned int             biYPelsPerMeter;// 4 bytes
     unsigned int             biClrUsed;      // 4 bytes
-    unsigned int             biClrImportant; // 4 bytes
+     unsigned int             biClrImportant; // 4 bytes
 } BMPInfoHeader;
 
 typedef struct {
@@ -30,5 +30,5 @@ typedef struct {
     unsigned char  rgbGreen;
     unsigned char  rgbRed;
     unsigned char  rgbReserved;
-} RGBQUAD;
+} RGB;
 #endif // MAIN_H_INCLUDEDs
