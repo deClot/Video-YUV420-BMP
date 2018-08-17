@@ -29,6 +29,14 @@ typedef struct {
     unsigned char  rgbBlue;
     unsigned char  rgbGreen;
     unsigned char  rgbRed;
-    unsigned char  rgbReserved;
 } RGB;
+
+typedef struct {
+    unsigned int  Y1;
+    unsigned int  Y2;
+    unsigned int  Y3;
+    unsigned int  Y4;
+    int           U;
+    int           V;
+} YUV420;
 #endif // MAIN_H_INCLUDEDs

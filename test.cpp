@@ -32,32 +32,41 @@ int read_bmp_header (ifstream &file_bmp, BMPFileHeader &file_header, BMPInfoHead
     return 1;
 }
 
-int read_bmp_rgb (ifstream &file_bmp, BMPFileHeader &file_header, BMPInfoHeader &info_header, RGB **rgb) {
+int read_bmp_rgb (ifstream &file_bmp, BMPFileHeader &file_header, BMPInfoHeader &info_header, RGB *rgb) {
 
     int padding = ((info_header.biWidth * (info_header.biBitCount / 8)) % 4) & 3;
 
     for (unsigned int i = 0; i < info_header.biHeight; i++) {
         for (unsigned int j = 0; j < info_header.biWidth; j++) {
-            read(file_bmp, rgb[i][j].rgbRed, info_header.biBitCount / 24); // 8*3; 8 for byte and 3 for number of bytes
-            read(file_bmp, rgb[i][j].rgbGreen, info_header.biBitCount / 24);
-            read(file_bmp, rgb[i][j].rgbBlue, info_header.biBitCount / 24);
+            read(file_bmp, rgb[i*info_header.biHeight+j].rgbRed, info_header.biBitCount / 24); // 8*3; 8 for byte and 3 for number of bytes
+            read(file_bmp, rgb[i*info_header.biHeight+j].rgbGreen, info_header.biBitCount / 24);
+            read(file_bmp, rgb[i*info_header.biHeight+j].rgbBlue, info_header.biBitCount / 24);
         }
         file_bmp.seekg(padding, ios_base::cur);    // from current position move to + padding
     }
-    /*   for (unsigned int i = 0; i < info_header.biHeight; i++) {
-         for (unsigned int j = 0; j < info_header.biWidth; j++) {
+    /*   for (unsigned int i = 0; i < info_header.biHeight*info_header.biWidth; i++) {
+        //  for (unsigned int j = 0; j < info_header.biWidth; j++) {
          cout << hex
-         << +rgb[i][j].rgbRed << " "
-         << +rgb[i][j].rgbGreen << " "
-         << +rgb[i][j].rgbBlue << " "
+         << +rgb[i].rgbRed << " "
+             //    << +rgb[i][j].rgbGreen << " "
+             //   << +rgb[i][j].rgbBlue << " "
          << endl;
-         }
+         //   }
          cout << endl;
          }
     */
     return 1;
 }
 
+int RGBtoYUV420 (RGB **rgb, int Height, int Width, YUV420 *yuv) {
+
+    for (unsigned int i = 0; i < Height; i++) {
+        for (unsigned int j = 0; j < Width; j = j+4) {
+            
+        }
+    }
+    return 1;
+    }
 
 int main(int argc, char **argv){
 
@@ -75,14 +84,16 @@ int main(int argc, char **argv){
     read_bmp_header (file_bmp, file_header, info_header);
 
     // Read RGB
-    RGB **rgb = new RGB*[info_header.biHeight];
-    for (unsigned int i = 0; i < info_header.biHeight; i++) {
-        rgb[i] = new RGB[info_header.biWidth];
-    }
+    RGB *rgb = new RGB[info_header.biHeight*info_header.biWidth];
+    //    for (unsigned int i = 0; i < info_header.biHeight; i++) {
+    //  rgb[i] = new RGB[info_header.biWidth];
+    //}
 
     read_bmp_rgb (file_bmp, file_header, info_header, rgb);
 
-    
+    YUV420 *yuv = new YUV420[(info_header.biHeight*info_header.biWidth)/4];
+    //   RGBtoYUV420 (rgb, info_header.biHeight, info_header.biWidth, yuv);
+
     return 1;
 }
 
