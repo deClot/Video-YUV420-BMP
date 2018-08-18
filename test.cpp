@@ -4,6 +4,13 @@
 #include <fstream>
 #include <string>
 
+#include <iomanip>  // for controlling float print precision
+#include <sstream>  // string to number conversion
+#include <opencv2/core.hpp>     // Basic OpenCV structures (cv::Mat, Scalar)
+#include <opencv2/imgproc.hpp>  // Gaussian Blur
+#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>  // OpenCV window I/O
+
 #include "main.h"
 
 using namespace std;
@@ -58,12 +65,18 @@ int read_bmp_rgb (ifstream &file_bmp, BMPFileHeader &file_header, BMPInfoHeader 
     return 1;
 }
 
-int RGBtoYUV420 (RGB **rgb, int Height, int Width, YUV420 *yuv) {
+int RGBtoYUV (RGB *rgb, unsigned int size_total, YUV *yuv) {
+    float Wr = 0.299;
+    float Wb = 0.114;
+    float Wg = 1- Wr - Wb;
+    float Umax = 0.426;
+    float Vmax = 0.615;
 
-    for (unsigned int i = 0; i < Height; i++) {
-        for (unsigned int j = 0; j < Width; j = j+4) {
-            
-        }
+    for (unsigned int i = 0; i < size_total; i++) {
+        //       cout << dec << +rgb[i].rgbRed<< endl;
+        yuv[i].Y = Wr*rgb[i].rgbRed + Wg*rgb[i].rgbGreen + Wb*rgb[i].rgbBlue;
+        yuv[i].U = Umax*(rgb[i].rgbBlue-yuv[i].Y)/(1-Wb);
+        yuv[i].V = Vmax*(rgb[i].rgbRed-yuv[i].Y)/(1-Wr);
     }
     return 1;
     }
@@ -84,15 +97,29 @@ int main(int argc, char **argv){
     read_bmp_header (file_bmp, file_header, info_header);
 
     // Read RGB
-    RGB *rgb = new RGB[info_header.biHeight*info_header.biWidth];
-    //    for (unsigned int i = 0; i < info_header.biHeight; i++) {
-    //  rgb[i] = new RGB[info_header.biWidth];
-    //}
+    unsigned int size_total = info_header.biHeight*info_header.biWidth;
+    RGB *rgb = new RGB[size_total];
 
     read_bmp_rgb (file_bmp, file_header, info_header, rgb);
 
-    YUV420 *yuv = new YUV420[(info_header.biHeight*info_header.biWidth)/4];
-    //   RGBtoYUV420 (rgb, info_header.biHeight, info_header.biWidth, yuv);
+    // Convert RGB to YUV420
+    YUV *yuv = new YUV[size_total];
+    RGBtoYUV (rgb, size_total, yuv);
+
+
+    /*    ofstream file_out ("bmp.yuv");
+
+    for ( unsigned int i = 0; i < size_total; i++){
+        file_out << yuv[i].Y;
+    }
+    for ( unsigned int i = 0; i < size_total; i += 4){
+        file_out << yuv[i].U;
+    }
+    for ( unsigned int i = 0; i < size_total; i += 4){
+        file_out << yuv[i].V;
+    }
+    file_out.close();
+    */
 
     return 1;
 }

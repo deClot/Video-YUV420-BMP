@@ -32,11 +32,11 @@ typedef struct {
 } RGB;
 
 typedef struct {
-    unsigned int  Y1;
-    unsigned int  Y2;
-    unsigned int  Y3;
-    unsigned int  Y4;
+    unsigned int  Y;
+    //  unsigned int  Y2;
+    //   unsigned int  Y3;
+    //   unsigned int  Y4;
     int           U;
     int           V;
-} YUV420;
+} YUV;
 #endif // MAIN_H_INCLUDEDs
