@@ -14,6 +14,7 @@
 #include "main.h"
 
 using namespace std;
+using namespace cv;
 
 template <typename Type> 
 void read(ifstream &file, Type &result, size_t size) {
@@ -28,7 +29,7 @@ int read_bmp_header (ifstream &file_bmp, BMPFileHeader &file_header, BMPInfoHead
         cout << "Error: file is not BMP file. "<< endl;
         return 0;
     }
-    if (info_header.biBitCount != 24) {       // check size of header - 40 (without compression)
+    if (info_header.biBitCount != 24) {      
         cout << "Error: file is not 24 bit file. "<< std::endl;
         return 0;
     }
@@ -84,7 +85,7 @@ int RGBtoYUV (RGB *rgb, unsigned int size_total, YUV *yuv) {
 int main(int argc, char **argv){
 
     //  Open file
-    ifstream file_bmp( "qq.bmp",ios_base::in |ios_base::binary);
+    ifstream file_bmp( "arch.bmp",ios_base::in |ios_base::binary);
     if (!file_bmp) {
         cout << "Error opening file" << endl;
         return 0;
