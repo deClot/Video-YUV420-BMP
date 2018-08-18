@@ -85,7 +85,9 @@ int RGBtoYUV (RGB *rgb, unsigned int size_total, YUV *yuv) {
 int main(int argc, char **argv){
 
     //  Open file
-    ifstream file_bmp( "arch.bmp",ios_base::in |ios_base::binary);
+
+    char* file_name = argv[1];
+    ifstream file_bmp( file_name,ios_base::in |ios_base::binary);
     if (!file_bmp) {
         cout << "Error opening file" << endl;
         return 0;
