@@ -22,7 +22,8 @@ void read(ifstream &file, Type &result, size_t size) {
 }
 
 int read_bmp_header (ifstream &file_bmp, BMPFileHeader &file_header, BMPInfoHeader &info_header) {
-    read(file_bmp, file_header, sizeof(file_header)-2);  // -2 due to adding 2 bytes to sizeof(file_header)=16
+
+    read(file_bmp, file_header, sizeof(file_header));
     read(file_bmp, info_header, sizeof(info_header));
 
     if (file_header.bfType != 0x4D42) {   // check format file - BM
