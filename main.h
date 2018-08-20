@@ -1,7 +1,6 @@
 #ifndef MAIN_H_INCLUDED
 #define MAIN_H_INCLUDED
 
-#pragma pack(push, 1)
 typedef struct {
     // BIT MAP FILE HEADER - 14 bytes
     unsigned short  bfType;         // 2 bytes, the same as short int
@@ -10,7 +9,6 @@ typedef struct {
     unsigned short  bfReserved2;    // 2 bytes
     unsigned int             bfOffBits;      // 4 bytes
 } BMPFileHeader;
-#pragma pack(pop)
 
 typedef struct {
     // BIT MAP INFO HEADER - 40 bytes
