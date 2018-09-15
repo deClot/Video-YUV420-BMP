@@ -4,17 +4,9 @@
 #include <fstream>
 #include <string>
 
-#include <iomanip>  // for controlling float print precision
-#include <sstream>  // string to number conversion
-#include <opencv2/core.hpp>     // Basic OpenCV structures (cv::Mat, Scalar)
-#include <opencv2/imgproc.hpp>  // Gaussian Blur
-#include <opencv2/videoio.hpp>
-#include <opencv2/highgui.hpp>  // OpenCV window I/O
-
 #include "main.h"
 
 using namespace std;
-using namespace cv;
 
 template <typename Type> 
 void read(ifstream &file, Type &result, size_t size) {
