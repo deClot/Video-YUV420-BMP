@@ -11,6 +11,7 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavfilter/avfiltergraph.h>
 #include <libswscale/swscale.h>
 }
 
@@ -127,7 +128,8 @@ int main(int argc, char **argv){
     */
 
     av_register_all();
-    
+    avfilter_register_all();
+
 	// Init SDL with video support;
     SDL_Init(SDL_INIT_VIDEO);
 	if (SDL_Init(SDL_INIT_VIDEO) != 0){
@@ -161,22 +163,20 @@ int main(int argc, char **argv){
 
     // Find the first video stream
     int video_stream;
-   	for (video_stream = 0; video_stream < format_context->nb_streams; video_stream++) {
-		if (format_context->streams[video_stream]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-			break;
-		}
+    AVCodec *dec;
+
+    err = av_find_best_stream(format_context, AVMEDIA_TYPE_VIDEO, -1, -1, &dec, 0);
+    if (err < 0) {
+        cout << "Cannot find a video stream in the input file\n" << endl;
+        return 0;
     }
-	if (video_stream == format_context->nb_streams) {
-		cout << "ffmpeg: Unable to find video stream\n"<< endl;
-		return 0;
-	}
+    video_stream = err;
 
-    // Get a pointer to the codec context for the video stream
-    AVCodecContext* codec_context = NULL;
+    // Create decoding context
+    AVCodecContext* codec_context;
     AVCodecParameters* par = format_context->streams[video_stream]->codecpar;
-    AVCodec* codec = avcodec_find_decoder(par->codec_id);     // find decoder
 
-    codec_context = avcodec_alloc_context3(codec);
+    codec_context = avcodec_alloc_context3(dec);
     if (!codec_context) {
         cout <<  "Could not allocate a decoding context\n" << endl;
         return 0;
@@ -188,28 +188,49 @@ int main(int argc, char **argv){
 		return 0;
     }
 
-    // Open codec
- 	err = avcodec_open2(codec_context, codec, NULL);
+    // Init the video decoder
+ 	err = avcodec_open2(codec_context, dec, NULL);
 	if (err < 0) {
 		cout << "ffmpeg: Unable to open codec\n" << endl;
 		return 0;
     }
 
+    AVPacket packet;                           // read data from file by packet
+    AVFrame* frame      = av_frame_alloc();    // for display use frame
+    AVFrame *filt_frame = av_frame_alloc();
 
-    SDL_Window *screen = SDL_CreateWindow("YUV420",
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          SDL_WINDOWPOS_UNDEFINED,
-                                          codec_context->width, codec_context->height,
-                                          SDL_WINDOW_OPENGL);
-    //    SDL_Overlay* bmp = SDL_CreateYUVOverlay(codec_context->width, codec_context->height,
-	//										SDL_YV12_OVERLAY, screen);
+    if (!frame || !filt_frame) {
+        cout <<"Could not allocate frame" << endl;
+        return 0;
+    }
 
-    SDL_Renderer* renderer =  SDL_CreateRenderer(screen, -1, SDL_RENDERER_ACCELERATED);
-    SDL_Texture* texture =  SDL_CreateTexture(renderer, SDL_PIXELFORMAT_IYUV,
-                                              SDL_TEXTUREACCESS_TARGET,
-                                              codec_context->width, codec_context->height);
+	while (av_read_frame(format_context, &packet) >= 0) {  // Return the next frame of a stream
+        // Check packet is video stream?
+        if (packet.stream_index == video_stream) {
+            // Decode video frame
+			//avcodec_decode_video2(codec_context, frame, &frame_finished, &packet);    it was
+            err = avcodec_send_packet (codec_context, &packet);
+            if (err < 0) {
+                cout << "avcodec_send_packet error: " << err << endl;
+                break;
+            }
 
-
+            while (err  >= 0) {
+                err = avcodec_receive_frame(codec_context, frame);
+                if (err == AVERROR(EAGAIN) || err == AVERROR_EOF) {
+                    break;
+                }
+                else if (err < 0) {
+                    cout << "avcodec_receive_frame error: " << err << endl;
+                    return 0;
+                }
+                if (err >= 0) {
+                    
+                }
+            }
+        }
+    }
+    
     return 1;
 }
 
