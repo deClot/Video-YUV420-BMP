@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 
+
 #include "main.h"
 
 #include <SDL2/SDL.h>
@@ -13,10 +14,16 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavfilter/avfiltergraph.h>
 #include <libswscale/swscale.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#include <libavutil/opt.h>
+#include <libavutil/rational.h>
 }
 
-
 using namespace std;
+
+const char *filter_descr = "scale=78:24";
+
 
 template <typename Type> 
 void read(ifstream &file, Type &result, size_t size) {
@@ -32,7 +39,7 @@ int read_bmp_header (ifstream &file_bmp, BMPFileHeader &file_header, BMPInfoHead
         cout << "Error: file is not BMP file. "<< endl;
         return 0;
     }
-    if (info_header.biBitCount != 24) {      
+    if (info_header.biBitCount != 24) {
         cout << "Error: file is not 24 bit file. "<< std::endl;
         return 0;
     }
@@ -104,6 +111,7 @@ int main(int argc, char **argv){
 
     // Read RGB
     unsigned int size_total = info_header.biHeight*info_header.biWidth;
+    cout << "width bmp = " << info_header.biWidth << "  height bmp = " <<info_header.biHeight <<endl;
     RGB *rgb = new RGB[size_total];
 
     read_bmp_rgb (file_bmp, file_header, info_header, rgb);
@@ -112,6 +120,17 @@ int main(int argc, char **argv){
     YUV *yuv = new YUV[size_total];
     RGBtoYUV (rgb, size_total, yuv);
 
+    uint8_t *inputBufferY = new uint8_t[size_total];
+    uint8_t *inputBufferU = new uint8_t[size_total/4];
+    uint8_t *inputBufferV = new uint8_t[size_total/4];
+
+    for ( unsigned int i = 0; i < size_total; i++){
+        *inputBufferY++ = uint8_t(yuv[i].Y);
+    }
+    for ( unsigned int i = 0; i < size_total; i=i+4){
+        *inputBufferU++ =  uint8_t(yuv[i].U);
+        *inputBufferV++ =  uint8_t(yuv[i].V);
+    }
 
     /*    ofstream file_out ("bmp.yuv");
 
@@ -197,15 +216,14 @@ int main(int argc, char **argv){
 
     AVPacket packet;                           // read data from file by packet
     AVFrame* frame      = av_frame_alloc();    // for display use frame
-    AVFrame *filt_frame = av_frame_alloc();
 
-    if (!frame || !filt_frame) {
+    if (!frame) {
         cout <<"Could not allocate frame" << endl;
         return 0;
     }
 
-	while (av_read_frame(format_context, &packet) >= 0) {  // Return the next frame of a stream
-        // Check packet is video stream?
+    while (av_read_frame(format_context, &packet) >= 0) {  // Return the next frame of a stream
+    // Check packet is video stream?
         if (packet.stream_index == video_stream) {
             // Decode video frame
 			//avcodec_decode_video2(codec_context, frame, &frame_finished, &packet);    it was
@@ -225,12 +243,16 @@ int main(int argc, char **argv){
                     return 0;
                 }
                 if (err >= 0) {
-                    
+                    memcpy(frame->data[0], inputBufferY, size_total);
+                    memcpy(frame->data[1], inputBufferU, size_total/4);
+                    memcpy(frame->data[2], inputBufferV, size_total/4);
+
+                    av_frame_unref(frame);
                 }
             }
+            av_packet_unref(&packet);
         }
     }
-    
-    return 1;
+    return 0;
 }
 
