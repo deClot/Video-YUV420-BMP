@@ -66,8 +66,7 @@ int open_input_video (char* video_name, AVFormatContext** format_context, AVCode
     return 1;
 }
 
-int open_output_video(const char *filename,
-                            AVCodecContext *input_codec_context,
+int open_output_video(char *filename, AVCodecContext *input_codec_context,
                             AVFormatContext **output_format_context,
                             AVCodecContext **output_codec_context) {
     AVCodecContext *avctx          = NULL;
