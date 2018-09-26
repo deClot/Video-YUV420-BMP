@@ -42,6 +42,7 @@ int open_input_video (char* video_name, AVFormatContext** format_context, AVCode
     // Create decoding context
     AVCodecParameters* par = (*format_context)->streams[*video_stream]->codecpar;
 
+    //   cout << "format bit_rate " << (*format_context)->bit_rate; 
     //    AVCodecContext *ctx;
 
     *codec_context = avcodec_alloc_context3(dec);
@@ -56,6 +57,7 @@ int open_input_video (char* video_name, AVFormatContext** format_context, AVCode
 		return 0;
     }
 
+    //    cout << "timebase " << (*codec_context)->time_base.den <<" "<< (*codec_context)->time_base.num <<endl;
     // Init the video decoder
  	err = avcodec_open2(*codec_context, dec, NULL);
 	if (err < 0) {
@@ -79,12 +81,13 @@ int open_output_video(char *filename, AVCodecContext *input_codec_context,
                            AVIO_FLAG_WRITE)) < 0) {
         cout <<"Could not open output file" << endl;
         return 0;
-    } 
+    }
     /** Create a new format context for the output container format. */
     if (!(*output_format_context = avformat_alloc_context())) {
         fprintf(stderr, "Could not allocate output format context\n");
         return AVERROR(ENOMEM);
     }
+
     /** Associate the output file (pointer) with the container format context. */
     (*output_format_context)->pb = output_io_context;
     /** Guess the desired container format based on the file extension. */
@@ -93,19 +96,23 @@ int open_output_video(char *filename, AVCodecContext *input_codec_context,
         fprintf(stderr, "Could not find output file format\n");
         return 0;
     }
+
     //    av_strlcpy((*output_format_context)->filename, filename,
     //           sizeof((*output_format_context)->filename));
-    /** Find the encoder to be used by its name. */
-    if (!(output_codec = avcodec_find_encoder(AV_CODEC_ID_AAC))) {
-        fprintf(stderr, "Could not find an AAC encoder.\n");
+
+    /** Find the encoder to be used by its name. */ //input_codec_context->codec_id
+    if (!(output_codec = avcodec_find_encoder(AV_CODEC_ID_RAWVIDEO))) {
+        fprintf(stderr, "Could not find encoder.\n");
         return 0;
     }
-    /** Create a new audio stream in the output file container. */
+
+    /** Create a new stream in the output file container. */
     if (!(stream = avformat_new_stream(*output_format_context, NULL))) {
         fprintf(stderr, "Could not create new stream\n");
         error = AVERROR(ENOMEM);
         return 0;
     }
+
     avctx = avcodec_alloc_context3(output_codec);
     if (!avctx) {
         fprintf(stderr, "Could not allocate an encoding context\n");
@@ -113,13 +120,20 @@ int open_output_video(char *filename, AVCodecContext *input_codec_context,
         return 0;
     }
 
-    if ((*output_format_context)->oformat->flags & AVFMT_GLOBALHEADER)
-        avctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-    /** Open the encoder for the audio stream to use it later. */
+    avctx->time_base = (AVRational){1, 25};
+    avctx->width  = input_codec_context->width;
+    avctx->height = input_codec_context->height;
+    avctx->pix_fmt = AV_PIX_FMT_YUV420P;
+
+    //   if ((*output_format_context)->oformat->flags & AVFMT_GLOBALHEADER)
+    //  avctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+    /** Open the encoder for stream to use it later. */
     if ((error = avcodec_open2(avctx, output_codec, NULL)) < 0) {
-        cout << "Could not open output codec " << endl;
+        cout << "Could not open output codec " << error<< endl;
         return 0;
     }
+
     error = avcodec_parameters_from_context(stream->codecpar, avctx);
     if (error < 0) {
         fprintf(stderr, "Could not initialize stream parameters\n");
@@ -128,4 +142,16 @@ int open_output_video(char *filename, AVCodecContext *input_codec_context,
     /** Save the encoder context for easier access later. */
     *output_codec_context = avctx;
     return 1;
+}
+
+
+/** Write the header of the output file container. */
+int write_output_file_header(AVFormatContext *output_format_context)
+{
+    int error;
+    if ((error = avformat_write_header(output_format_context, NULL)) < 0) {
+        cout << "Could not write output file header " << error << endl;
+        return error;
+    }
+    return 0;
 }

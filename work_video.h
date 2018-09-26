@@ -13,5 +13,7 @@ int open_output_video(char* filename, AVCodecContext *input_codec_context,
                      AVFormatContext **output_format_context,
                      AVCodecContext **output_codec_context);
 
+int write_output_file_header(AVFormatContext *output_format_context);
+
 
 #endif

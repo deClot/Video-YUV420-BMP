@@ -81,6 +81,8 @@ int main(int argc, char **argv){
 
     err = open_output_video(output_name, codec_context, &format_context_out, &codec_context_out);
 
+    err = write_output_file_header (format_context_out);
+
     AVPacket packet;                           // read data from file by packet
     AVFrame* frame      = av_frame_alloc();    // for display use frame
 
@@ -89,6 +91,7 @@ int main(int argc, char **argv){
         return 0;
     }
 
+    /** Read one audio frame from the input file into a temporary packet. */
     while (av_read_frame(format_context, &packet) >= 0) {  // Return the next frame of a stream
     // Check packet is video stream?
         if (packet.stream_index == video_stream) {
