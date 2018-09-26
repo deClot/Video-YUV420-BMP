@@ -15,5 +15,6 @@ int open_output_video(char* filename, AVCodecContext *input_codec_context,
 
 int write_output_file_header(AVFormatContext *output_format_context);
 
+int encode_frame(AVCodecContext *codec_context_out, AVFrame *frame_out, AVPacket *packet);
 
 #endif

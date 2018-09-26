@@ -124,6 +124,7 @@ int open_output_video(char *filename, AVCodecContext *input_codec_context,
     avctx->width  = input_codec_context->width;
     avctx->height = input_codec_context->height;
     avctx->pix_fmt = AV_PIX_FMT_YUV420P;
+    avctx->codec_type = AVMEDIA_TYPE_VIDEO;
 
     //   if ((*output_format_context)->oformat->flags & AVFMT_GLOBALHEADER)
     //  avctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -139,6 +140,8 @@ int open_output_video(char *filename, AVCodecContext *input_codec_context,
         fprintf(stderr, "Could not initialize stream parameters\n");
         return 0;
     }
+    
+
     /** Save the encoder context for easier access later. */
     *output_codec_context = avctx;
     return 1;
@@ -155,3 +158,44 @@ int write_output_file_header(AVFormatContext *output_format_context)
     }
     return 0;
 }
+
+int encode_frame(AVCodecContext *codec_context_out, AVFrame *frame_out, AVPacket *packet){
+    int err = 0;
+    frame_out->format = codec_context_out->pix_fmt;
+    frame_out->width  = codec_context_out->width;
+    frame_out->height = codec_context_out->height;
+
+    err = av_frame_get_buffer(frame_out, 32);
+    if (err < 0) {
+        fprintf(stderr, "Could not allocate the video frame data\n");
+        return err;
+    }
+
+    /* make sure the frame data is writable */
+    if (err = av_frame_make_writable(frame_out)<0){
+        cout << "Could not allocate the video frame data" << endl;
+        return err;
+    }
+
+    err = avcodec_send_frame(codec_context_out, frame_out);
+
+    if (err < 0) {
+        fprintf(stderr, "Error sending a frame for encoding\n");
+        return err;
+    }
+ 
+    while (err >= 0) {
+        err = avcodec_receive_packet(codec_context_out, packet); ////!!!!!!!!!
+
+        if (err == AVERROR(EAGAIN) || err == AVERROR_EOF){
+            break;
+        }
+        else if (err < 0) {
+            fprintf(stderr, "Error during encoding\n");
+            return err;
+        }
+        av_frame_unref(frame_out);
+    }
+    return 0;
+}
+

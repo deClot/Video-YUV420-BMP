@@ -81,22 +81,24 @@ int main(int argc, char **argv){
 
     err = open_output_video(output_name, codec_context, &format_context_out, &codec_context_out);
 
-    err = write_output_file_header (format_context_out);
+    err = write_output_file_header(format_context_out);
 
-    AVPacket packet;                           // read data from file by packet
-    AVFrame* frame      = av_frame_alloc();    // for display use frame
+    AVPacket packet, *packet_out = av_packet_alloc();;
+    AVFrame *frame     = av_frame_alloc();
+    AVFrame *frame_out = av_frame_alloc() ;
 
     if (!frame) {
         cout <<"Could not allocate frame" << endl;
         return 0;
     }
 
-    /** Read one audio frame from the input file into a temporary packet. */
+    /** Read one frame from the input file into a temporary packet. */
     while (av_read_frame(format_context, &packet) >= 0) {  // Return the next frame of a stream
     // Check packet is video stream?
         if (packet.stream_index == video_stream) {
             // Decode video frame
 			//avcodec_decode_video2(codec_context, frame, &frame_finished, &packet);    it was
+
             err = avcodec_send_packet (codec_context, &packet);
             if (err < 0) {
                 cout << "avcodec_send_packet error: " << err << endl;
@@ -110,17 +112,15 @@ int main(int argc, char **argv){
                 }
                 else if (err < 0) {
                     cout << "avcodec_receive_frame error: " << err << endl;
-                    return 0;
+                    return err;
                 }
                 if (err >= 0) {
                     memcpy(frame->data[0], inputBufferY, size_total);
                     memcpy(frame->data[1], inputBufferU, size_total/4);
                     memcpy(frame->data[2], inputBufferV, size_total/4);
-
-                    av_frame_unref(frame);
+                    encode_frame(codec_context_out, frame_out, &packet) ;
                 }
             }
-            av_packet_unref(&packet);
         }
     }
     return 0;
