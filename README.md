@@ -7,5 +7,5 @@ make
 
 To start the programm - input in console:
 ```
-test name_bmp_file name_yuv420_video
+test name_bmp_file name_yuv420_video name_output_file
 ```
